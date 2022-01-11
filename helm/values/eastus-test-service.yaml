@@ -1,0 +1,153 @@
+# prod values for test-service
+# This is an auto-generated file
+
+# Release Name
+deploymentName: test-service
+
+# Pod running port
+containerPort: 3000
+
+# Labels to be set to pod
+labels:
+  app: test-service
+  region: eastus
+  environment: prod
+  provider: AZURE
+
+# Image registry details
+image:
+  registry: ntarprodacr.azurecr.io
+  repository: test-service
+  tag: latest
+  pullPolicy: Always
+
+
+# Set desired replica count
+replicaCount: 1
+
+# Scaling strategy
+strategy:
+  rollingUpdate:
+    maxSurge: 25%
+    maxUnavailable: 25%
+
+podSecurityPolicy:
+  enabled: true
+  annotations:
+    seccomp.security.alpha.kubernetes.io/allowedProfileNames: 'docker/default'
+    apparmor.security.beta.kubernetes.io/allowedProfileNames: 'runtime/default'
+    seccomp.security.alpha.kubernetes.io/defaultProfileName:  'docker/default'
+    apparmor.security.beta.kubernetes.io/defaultProfileName:  'runtime/default'
+  spec:
+    privileged: false
+    # Required to prevent escalations to root.
+    allowPrivilegeEscalation: false
+    # This is redundant with non-root + disallow privilege escalation,
+    # but we can provide it for defense in depth.
+    requiredDropCapabilities:
+      - ALL
+    fsGroup:
+      rule: RunAsAny
+    runAsUser:
+      rule: RunAsAny
+    runAsGroup:
+      rule: RunAsAny
+    seLinux:
+      # This policy assumes the nodes are using AppArmor rather than SELinux.
+      rule: RunAsAny
+    supplementalGroups:
+      rule: RunAsAny
+    # Allow core volume types.
+    volumes:
+      - 'configMap'
+      - 'emptyDir'
+      - 'projected'
+      - 'secret'
+      - 'downwardAPI'
+      # Assume that persistentVolumes set up by the cluster admin are safe to use.
+      - 'persistentVolumeClaim'
+    hostNetwork: false
+    hostIPC: false
+    hostPID: false
+    readOnlyRootFilesystem: false
+
+# CPU and memory soft and hard limits
+resources:
+  limits:
+    cpu: 200m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+# Scaling based on cpu and memory metrics
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 1
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+## Additional environment variables to set
+extraEnvs:
+  - name: DD_AGENT_HOST
+    valueFrom:
+      fieldRef:
+        fieldPath: status.hostIP
+
+# Service Name to access the pods
+service:
+  name: test-service
+
+## Additional volumeMounts to the controller main container.
+extraVolumeMounts:
+  - name: secrets-store-inline
+    mountPath: "/mnt/secrets-store"
+    readOnly: true
+
+## Additional volumes to the controller pod.
+extraVolumes:
+  - name: secrets-store-inline
+    csi:
+      driver: secrets-store.csi.k8s.io
+      readOnly: true
+      volumeAttributes:
+        secretProviderClass: test-service-kv
+      nodePublishSecretRef:
+        name: secrets-store-creds
+
+
+# To set separate configmap for each microservice
+configmapPerMicroservice:
+  enabled: true
+
+# To set separate secret for each microservice
+secretPerMicroservice:
+  enabled: true
+
+# Micro service custom ENV's as configmap
+configmap:
+  FOO: "bar"
+
+secretProviderClass:
+  provider: azure
+  secretObjects:
+    - secretName: test-service-kv
+      type: Opaque
+      labels:
+        environment: prod
+      data:
+       - objectName: foobar
+         key: FOO_BAR
+  parameters:
+    usePodIdentity: "false"
+    keyvaultName: prod-eastus-vault
+    objects: |
+     array:
+       - |
+         objectName: foobar
+         objectType: secret
+         objectAlias: foobar
+         objectVersion: ""
+    tenantId: "d7412ac9-a32c-433c-90de-eeed2e1f29b0"
+
