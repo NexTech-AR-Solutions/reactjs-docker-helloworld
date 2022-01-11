@@ -1,0 +1,26 @@
+# Variables template for dev environment nln-vip-holox-standalone-queue
+
+variables:
+  #user-defined variables
+  pipelineRef: refs/head/main #pipeline repo git reference if not main
+
+  #pipeline details
+  vmImageName: 'ubuntu-latest'
+  adoProject: devops
+
+  #environment details
+  environmentName: dev
+  adoEnvironment: test-dev
+  azureSubscription: 'azure_dev_subscription'
+  clusterName: 'dev-eastus'
+  clusterRG: 'ntar-dev-eastus-rg'
+  namespace: test
+
+  # Service Details
+  serviceName: test-service
+  repository_name: reactjs-docker-helloworld
+
+  # Docker details
+  dockerFilePath: '**/Dockerfile'
+  dockerRegistryServiceConnection: 'ntarprodacr'
+  dockerBuildArg: 
